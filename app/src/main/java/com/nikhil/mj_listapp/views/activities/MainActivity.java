@@ -3,9 +3,7 @@ package com.nikhil.mj_listapp.views.activities;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
 
 import android.Manifest;
@@ -291,7 +289,6 @@ public class MainActivity extends AppCompatActivity
 				e.printStackTrace();
 			}
 		}
-
 	}
 
 	@Override
