@@ -9,10 +9,10 @@ import java.util.List;
 @Dao
 public interface EntityDao
 {
+	//Push check
 	@Query("SELECT * FROM EntityTable")
 	List<EntityTable> getAll();
 
 	@Insert
-    void insertAll(EntityTable... entities);
-
+    void insert(EntityTable entities);
 }
