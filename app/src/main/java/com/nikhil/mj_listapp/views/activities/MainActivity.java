@@ -3,6 +3,10 @@ package com.nikhil.mj_listapp.views.activities;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelProviders;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -16,8 +20,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.nikhil.mj_listapp.R;
+import com.nikhil.mj_listapp.database.EntityTable;
 import com.nikhil.mj_listapp.network.RetrofitInterface;
+import com.nikhil.mj_listapp.repositories.EntityRepository;
 import com.nikhil.mj_listapp.utilities.UtilityClass;
+import com.nikhil.mj_listapp.viewmodel.EntityViewModel;
 
 import org.json.JSONArray;
 
@@ -27,6 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
@@ -44,6 +52,10 @@ public class MainActivity extends AppCompatActivity
 	TextView txtProgressPercent;
 
 	ProgressBar progressBar;
+
+	EntityRepository entityRepository;
+
+	EntityViewModel entityViewModel;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -251,7 +263,35 @@ public class MainActivity extends AppCompatActivity
 		}
 
 		JSONArray resultArray = UtilityClass.readDataFromFile("MJList.txt");
-		Log.i(TAG, "askForPermission resultArray: " + resultArray.toString());
+
+		entityViewModel = ViewModelProviders.of(this).get(EntityViewModel.class);
+		entityViewModel.getAll().observe(this, new Observer<List<EntityTable>>()
+		{
+			@Override
+			public void onChanged(List<EntityTable> entityTables)
+			{
+				//Log.i(TAG, "askForPermission: listSize " + entityTables.toString());
+				for (int i = 0; i < entityTables.size(); i++)
+				{
+					Log.d(TAG, "onChanged: " + entityTables.get(i).getData());
+				}
+			}
+		});
+
+		for (int i = 0; i < resultArray.length(); i++)
+		{
+			try
+			{
+				String element = resultArray.getString(i);
+				EntityTable entityTable = new EntityTable(element);
+				//entityViewModel.insertEntity(entityTable);
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+
 	}
 
 	@Override
