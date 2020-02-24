@@ -5,6 +5,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -23,8 +25,10 @@ import com.nikhil.mj_listapp.network.RetrofitInterface;
 import com.nikhil.mj_listapp.repositories.EntityRepository;
 import com.nikhil.mj_listapp.utilities.UtilityClass;
 import com.nikhil.mj_listapp.viewmodel.EntityViewModel;
+import com.nikhil.mj_listapp.views.adapters.RecyclerAdapter;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,6 +36,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import okhttp3.OkHttpClient;
@@ -55,16 +60,23 @@ public class MainActivity extends AppCompatActivity
 
 	EntityViewModel entityViewModel;
 
+	RecyclerView recyclerView;
+
+	RecyclerAdapter recyclerAdapter;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, 101);
-
 		txtProgressPercent = findViewById(R.id.txtProgressPercent);
 		progressBar = findViewById(R.id.progressBar);
+		recyclerView = findViewById(R.id.rv_albums);
+		recyclerView.setLayoutManager(new LinearLayoutManager(this));
+		recyclerView.setHasFixedSize(true);
+
+		askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, 101);
 	}
 
 	private void downloadFile()
@@ -262,6 +274,23 @@ public class MainActivity extends AppCompatActivity
 
 		JSONArray resultArray = UtilityClass.readDataFromFile("MJList.txt");
 
+		ArrayList<String> al_result = new ArrayList<>();
+
+		for (int i = 0; i < resultArray.length(); i++)
+		{
+			try
+			{
+				al_result.add(resultArray.getString(i));
+			}
+			catch (JSONException e)
+			{
+				e.printStackTrace();
+			}
+		}
+
+		recyclerAdapter = new RecyclerAdapter(this);
+		recyclerView.setAdapter(recyclerAdapter);
+
 		entityViewModel = ViewModelProviders.of(this).get(EntityViewModel.class);
 		entityViewModel.getAll().observe(this, new Observer<List<EntityTable>>()
 		{
@@ -273,6 +302,8 @@ public class MainActivity extends AppCompatActivity
 				{
 					Log.d(TAG, "onChanged: " + entityTables.get(i).getData());
 				}
+
+				recyclerAdapter.setList(entityTables);
 			}
 		});
 
@@ -282,13 +313,14 @@ public class MainActivity extends AppCompatActivity
 			{
 				String element = resultArray.getString(i);
 				EntityTable entityTable = new EntityTable(element);
-				//entityViewModel.insertEntity(entityTable);
+				entityViewModel.insertEntity(entityTable);
 			}
 			catch (Exception e)
 			{
 				e.printStackTrace();
 			}
 		}
+
 	}
 
 	@Override
