@@ -34,6 +34,11 @@ public class EntityRepository
 		new InsertDataAsyncTask(entityDao).execute(entityTable);
 	}
 
+	public int getDataCount()
+	{
+		return entityDao.getDataCount();
+	}
+
 	private static class InsertDataAsyncTask extends AsyncTask<EntityTable, Void, Void>
 	{
 		private EntityDao entityDao;
@@ -48,22 +53,6 @@ public class EntityRepository
 		{
 			entityDao.insert(entityTable[0]);
 			return null;
-		}
-	}
-
-	private static class GetAllDataAsyncTask extends AsyncTask<EntityTable, Void, LiveData<List<EntityTable>>>
-	{
-		private EntityDao entityDao;
-
-		private GetAllDataAsyncTask(EntityDao entityDao)
-		{
-			this.entityDao = entityDao;
-		}
-
-		@Override
-		protected LiveData<List<EntityTable>> doInBackground(EntityTable... entityTable)
-		{
-			return entityDao.getAll();
 		}
 	}
 }

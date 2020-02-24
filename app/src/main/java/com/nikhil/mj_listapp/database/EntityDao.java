@@ -14,5 +14,8 @@ public interface EntityDao
 	LiveData<List<EntityTable>> getAll();
 
 	@Insert
-    void insert(EntityTable entities);
+	void insert(EntityTable entities);
+
+	@Query("SELECT count(uid) FROM EntityTable")
+	int getDataCount();
 }

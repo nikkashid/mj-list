@@ -32,7 +32,6 @@ public class UtilityClass
 			fis.close();
 
 			String content = sb.toString();
-			//Log.d(TAG, "content : " + content.trim());
 
 			return parseData(content.trim());
 		}

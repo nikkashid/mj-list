@@ -15,6 +15,8 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.util.Pair;
+import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,6 +40,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
@@ -62,19 +65,86 @@ public class MainActivity extends AppCompatActivity
 
 	RecyclerAdapter recyclerAdapter;
 
+	LinearLayout ll_downloadPart;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		initViews();
+
+		entityViewModel = ViewModelProviders.of(this).get(EntityViewModel.class);
+		entityViewModel.getAll().observe(this, new Observer<List<EntityTable>>()
+		{
+			@Override
+			public void onChanged(List<EntityTable> entityTables)
+			{
+				Log.i(TAG, "askForPermission: listSize " + entityTables.size());
+				/*for (int i = 0; i < entityTables.size(); i++)
+				{
+					Log.d(TAG, "onChanged: " + entityTables.get(i).getData());
+				}*/
+
+				recyclerView.setVisibility(View.VISIBLE);
+				ll_downloadPart.setVisibility(View.GONE);
+				recyclerAdapter.setList(entityTables);
+			}
+		});
+
+		askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, 101);
+	}
+
+	void initViews()
+	{
 		txtProgressPercent = findViewById(R.id.txtProgressPercent);
 		progressBar = findViewById(R.id.progressBar);
+		ll_downloadPart = findViewById(R.id.ll_downloadPart);
 		recyclerView = findViewById(R.id.rv_albums);
 		recyclerView.setLayoutManager(new LinearLayoutManager(this));
 		recyclerView.setHasFixedSize(true);
 
-		askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, 101);
+		recyclerAdapter = new RecyclerAdapter(this);
+		recyclerView.setAdapter(recyclerAdapter);
+	}
+
+	private void checkDBData()
+	{
+		final AtomicInteger fcount = new AtomicInteger();
+		try
+		{
+			Thread t = new Thread(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					int num = entityViewModel.getDataCount();
+					fcount.set(num);
+				}
+			});
+			t.setPriority(10);
+			t.start();
+			t.join();
+		}
+		catch (Exception e)
+		{
+			Log.e(TAG, "onCreate: ", e);
+		}
+
+		int dbCount = fcount.get();
+		if (dbCount > 0)
+		{
+			Log.d(TAG, "onCreate: dbCount = " + dbCount);
+			recyclerView.setVisibility(View.VISIBLE);
+			ll_downloadPart.setVisibility(View.GONE);
+		}
+		else
+		{
+			recyclerView.setVisibility(View.GONE);
+			ll_downloadPart.setVisibility(View.VISIBLE);
+			downloadFile();
+		}
 	}
 
 	private void downloadFile()
@@ -198,7 +268,9 @@ public class MainActivity extends AppCompatActivity
 				Log.d(TAG, destinationFile.getParent());
 				Pair<Integer, Long> pairs = new Pair<>(100, 100L);
 				downloadFileTask.doProgress(pairs);
-				readDataFromFile(filename);
+
+				sendDataFromFileToRoom(filename);
+
 				return;
 			}
 			catch (IOException e)
@@ -225,30 +297,25 @@ public class MainActivity extends AppCompatActivity
 		}
 	}
 
-	private void readDataFromFile(String filename)
+	private void sendDataFromFileToRoom(String filename)
 	{
-		try
-		{
-			File destinationFile = new File(
-					Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename);
+		JSONArray resultArray = UtilityClass.readDataFromFile(filename);
 
-			FileInputStream fis = new FileInputStream(destinationFile);
-			byte[] buffer = new byte[10];
-			StringBuilder sb = new StringBuilder();
-			while (fis.read(buffer) != -1)
+		if (resultArray.length() > 0)
+		{
+			for (int i = 0; i < resultArray.length(); i++)
 			{
-				sb.append(new String(buffer));
-				buffer = new byte[10];
+				try
+				{
+					String element = resultArray.getString(i);
+					EntityTable entityTable = new EntityTable(element);
+					entityViewModel.insertEntity(entityTable);
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace();
+				}
 			}
-
-			fis.close();
-
-			String content = sb.toString();
-			Log.d(TAG, "content : " + content.trim());
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
 		}
 	}
 
@@ -269,56 +336,10 @@ public class MainActivity extends AppCompatActivity
 		{
 			Toast.makeText(getApplicationContext(), "Permission was denied", Toast.LENGTH_SHORT).show();
 		}
-
-		JSONArray resultArray = UtilityClass.readDataFromFile("MJList.txt");
-
-		ArrayList<String> al_result = new ArrayList<>();
-
-		for (int i = 0; i < resultArray.length(); i++)
+		else
 		{
-			try
-			{
-				al_result.add(resultArray.getString(i));
-			}
-			catch (JSONException e)
-			{
-				e.printStackTrace();
-			}
+			checkDBData();
 		}
-
-		recyclerAdapter = new RecyclerAdapter(this);
-		recyclerView.setAdapter(recyclerAdapter);
-
-		entityViewModel = ViewModelProviders.of(this).get(EntityViewModel.class);
-		entityViewModel.getAll().observe(this, new Observer<List<EntityTable>>()
-		{
-			@Override
-			public void onChanged(List<EntityTable> entityTables)
-			{
-				//Log.i(TAG, "askForPermission: listSize " + entityTables.toString());
-				for (int i = 0; i < entityTables.size(); i++)
-				{
-					Log.d(TAG, "onChanged: " + entityTables.get(i).getData());
-				}
-
-				recyclerAdapter.setList(entityTables);
-			}
-		});
-
-		for (int i = 0; i < resultArray.length(); i++)
-		{
-			try
-			{
-				String element = resultArray.getString(i);
-				EntityTable entityTable = new EntityTable(element);
-				entityViewModel.insertEntity(entityTable);
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace();
-			}
-		}
-
 	}
 
 	@Override
@@ -329,11 +350,12 @@ public class MainActivity extends AppCompatActivity
 		{
 			if (requestCode == 101)
 				Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show();
-			downloadFile();
+			checkDBData();
 		}
 		else
 		{
 			Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
 		}
 	}
+
 }

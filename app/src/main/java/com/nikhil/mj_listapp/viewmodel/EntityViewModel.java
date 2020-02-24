@@ -32,4 +32,9 @@ public class EntityViewModel extends AndroidViewModel
     {
         entityRepository.insert(entityTable);
     }
+
+    public int getDataCount()
+    {
+        return entityRepository.getDataCount();
+    }
 }
