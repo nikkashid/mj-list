@@ -56,8 +56,6 @@ public class MainActivity extends AppCompatActivity
 
 	ProgressBar progressBar;
 
-	EntityRepository entityRepository;
-
 	EntityViewModel entityViewModel;
 
 	RecyclerView recyclerView;
