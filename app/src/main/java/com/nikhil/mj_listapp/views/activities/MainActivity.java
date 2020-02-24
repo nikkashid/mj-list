@@ -2,6 +2,7 @@ package com.nikhil.mj_listapp.views.activities;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
@@ -9,6 +10,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.app.ActivityOptions;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -16,6 +19,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -24,21 +28,17 @@ import android.widget.Toast;
 import com.nikhil.mj_listapp.R;
 import com.nikhil.mj_listapp.database.EntityTable;
 import com.nikhil.mj_listapp.network.RetrofitInterface;
-import com.nikhil.mj_listapp.repositories.EntityRepository;
 import com.nikhil.mj_listapp.utilities.UtilityClass;
 import com.nikhil.mj_listapp.viewmodel.EntityViewModel;
 import com.nikhil.mj_listapp.views.adapters.RecyclerAdapter;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,7 +49,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends AppCompatActivity implements RecyclerAdapter.IAdapterCallBack
 {
 	private static final String TAG = "MainActivity";
 
@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity
 		recyclerView.setLayoutManager(new LinearLayoutManager(this));
 		recyclerView.setHasFixedSize(true);
 
-		recyclerAdapter = new RecyclerAdapter(this);
+		recyclerAdapter = new RecyclerAdapter(this, MainActivity.this);
 		recyclerView.setAdapter(recyclerAdapter);
 	}
 
@@ -185,6 +185,37 @@ public class MainActivity extends AppCompatActivity
 	{
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(baseUrl).client(new OkHttpClient.Builder().build()).build();
 		return retrofit.create(serviceClass);
+	}
+
+	@Override
+	public void itemClicked(String artistData, ImageView iv_albumImage, TextView artistName)
+	{
+		Intent intent = new Intent(this, DetailsActivity.class);
+		intent.putExtra("artistObject", artistData);
+		String transitionName = "test";
+		intent.putExtra("imageTransition", "imageTransition");
+		intent.putExtra("textTransition", "textTransition");
+
+		Pair<View, String> p1 = Pair.create((View) iv_albumImage, "imageTransition");
+		Pair<View, String> p2 = Pair.create((View) artistName, "textTransition");
+		/*ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, iv_albumImage, // Starting view
+				transitionName // The String
+		);*/
+
+		ActivityOptions options = null;
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP)
+		{
+			options = ActivityOptions.makeSceneTransitionAnimation(MainActivity.this, p1, p2);
+		}
+
+		if (options != null)
+		{
+			startActivity(intent, options.toBundle());
+		}
+		else
+		{
+			startActivity(intent);
+		}
 	}
 
 	private class DownloadFileTask extends AsyncTask<ResponseBody, Pair<Integer, Long>, String>

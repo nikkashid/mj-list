@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -28,9 +29,12 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
 
 	List<EntityTable> al_elements = new ArrayList<>();
 
-	public RecyclerAdapter(Context context)
+	IAdapterCallBack iAdapterCallBack;
+
+	public RecyclerAdapter(Context context, IAdapterCallBack iAdapterCallBack)
 	{
 		this.context = context;
+		this.iAdapterCallBack = iAdapterCallBack;
 	}
 
 	@NonNull
@@ -43,13 +47,13 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
 	}
 
 	@Override
-	public void onBindViewHolder(@NonNull ViewHolder holder, int position)
+	public void onBindViewHolder(@NonNull final ViewHolder holder, int position)
 	{
 		try
 		{
 			EntityTable innerPojo = al_elements.get(position);
 
-			JSONObject innerObject = new JSONObject(innerPojo.getData());
+			final JSONObject innerObject = new JSONObject(innerPojo.getData());
 
 			holder.artistName.setText(innerObject.getString("artistName"));
 			holder.collectionName.setText(innerObject.getString("collectionName"));
@@ -57,10 +61,18 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
 
 			if (innerObject.has("artworkUrl100") && !innerObject.getString("artworkUrl100").equalsIgnoreCase(""))
 			{
-				Picasso.with(context)
-						.load(innerObject.getString("artworkUrl100"))
-						.into(holder.iv_albumImage);
+				Picasso.with(context).load(innerObject.getString("artworkUrl100")).into(holder.iv_albumImage);
 			}
+
+			holder.cd_maincard.setOnClickListener(new View.OnClickListener()
+			{
+				@Override
+				public void onClick(View v)
+				{
+					iAdapterCallBack.itemClicked(innerObject.toString(), holder.iv_albumImage, holder.artistName);
+				}
+			});
+
 		}
 		catch (Exception e)
 		{
@@ -86,6 +98,8 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
 
 		ImageView iv_albumImage;
 
+		LinearLayout cd_maincard;
+
 		public ViewHolder(@NonNull View itemView)
 		{
 			super(itemView);
@@ -94,6 +108,12 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
 			artistName = (TextView) itemView.findViewById(R.id.artistName);
 			collectionName = (TextView) itemView.findViewById(R.id.collectionName);
 			trackName = (TextView) itemView.findViewById(R.id.trackName);
+			cd_maincard = (LinearLayout) itemView.findViewById(R.id.cd_maincard);
 		}
+	}
+
+	public interface IAdapterCallBack
+	{
+		public void itemClicked(String artistData, ImageView iv_albumImage, TextView artistName);
 	}
 }
