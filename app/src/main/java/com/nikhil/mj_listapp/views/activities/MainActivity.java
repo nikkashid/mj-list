@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.app.ActivityOptions;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
@@ -192,15 +193,11 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.I
 	{
 		Intent intent = new Intent(this, DetailsActivity.class);
 		intent.putExtra("artistObject", artistData);
-		String transitionName = "test";
 		intent.putExtra("imageTransition", "imageTransition");
 		intent.putExtra("textTransition", "textTransition");
 
 		Pair<View, String> p1 = Pair.create((View) iv_albumImage, "imageTransition");
 		Pair<View, String> p2 = Pair.create((View) artistName, "textTransition");
-		/*ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, iv_albumImage, // Starting view
-				transitionName // The String
-		);*/
 
 		ActivityOptions options = null;
 		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP)
@@ -270,8 +267,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.I
 	{
 		try
 		{
-			File destinationFile = new File(
-					Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename);
+			File destinationFile = new File(this.getFilesDir(), filename);
+
+			//File file = new File(this.getFilesDir(),"mydir");
 
 			InputStream inputStream = null;
 			OutputStream outputStream = null;
@@ -330,7 +328,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.I
 
 	private void sendDataFromFileToRoom(String filename)
 	{
-		JSONArray resultArray = UtilityClass.readDataFromFile(filename);
+		JSONArray resultArray = UtilityClass.readDataFromFile(this, filename);
 
 		if (resultArray.length() > 0)
 		{
